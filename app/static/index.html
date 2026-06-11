@@ -1,0 +1,194 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>VectorLab · Campos Vectoriales y Funciones Hamiltonianas</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=STIX+Two+Text:ital,wght@0,400;0,600;0,700;1,400&family=Source+Sans+3:wght@400;600;700&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="/static/app.css">
+<script src="https://cdn.plot.ly/plotly-2.32.0.min.js"></script>
+<script>
+window.MathJax = { tex: { inlineMath: [['\\(','\\)']] }, svg: { fontCache: 'global' } };
+</script>
+<script src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-svg.js" async></script>
+</head>
+<body>
+
+<header class="topbar">
+  <div class="brand">
+    <span class="brand-mark">∇</span>
+    <div>
+      <h1>VectorLab</h1>
+      <p>Campos vectoriales · Funciones hamiltonianas · Cálculo de varias variables</p>
+    </div>
+  </div>
+  <div id="user-chip" class="user-chip hidden">
+    <span id="user-name"></span>
+    <button id="btn-logout" class="btn-ghost" type="button">Cerrar sesión</button>
+  </div>
+</header>
+
+<!-- ════════════════════ VISTA: ACCESO ════════════════════ -->
+<main id="vista-acceso" class="acceso">
+  <section class="acceso-intro">
+    <h2>Visualiza el cálculo, no solo lo calcules.</h2>
+    <p>
+      Plataforma educativa para estudiantes de ingeniería: escribe una función de varias
+      variables y explora en 3D su campo gradiente <span class="math-inline">∇f</span>,
+      el campo hamiltoniano <span class="math-inline">X<sub>H</sub></span> con sus órbitas
+      de energía constante, o un campo vectorial general
+      <span class="math-inline">F(x,y,z)</span> con su divergencia y rotacional.
+    </p>
+    <ul class="intro-puntos">
+      <li>Derivación simbólica exacta con <strong>SymPy</strong> (Python) en el servidor.</li>
+      <li>Gráficas <strong>3D interactivas</strong>: rota, acerca y examina desde cualquier dirección.</li>
+      <li>Guía de sintaxis con ejemplos de un clic.</li>
+    </ul>
+  </section>
+
+  <section class="ficha">
+    <div class="ficha-tabs" role="tablist">
+      <button id="tab-registro" class="ficha-tab activa" type="button">Registro</button>
+      <button id="tab-login" class="ficha-tab" type="button">Ingresar</button>
+    </div>
+
+    <!-- Registro -->
+    <div id="panel-registro" class="ficha-panel">
+      <p class="ficha-titulo">Ficha de inscripción del estudiante</p>
+      <div class="grid-2">
+        <label>Apellidos
+          <input id="r-apellidos" type="text" autocomplete="family-name" placeholder="Pérez Mamani">
+        </label>
+        <label>Nombres
+          <input id="r-nombres" type="text" autocomplete="given-name" placeholder="Juan Carlos">
+        </label>
+        <label>Celular
+          <input id="r-celular" type="tel" inputmode="tel" placeholder="71234567">
+        </label>
+        <label>Carnet universitario
+          <input id="r-carnet" type="text" placeholder="2024-12345">
+        </label>
+        <label class="span-2">Correo electrónico
+          <input id="r-correo" type="email" autocomplete="email" placeholder="nombre@correo.com">
+        </label>
+        <label>Materia
+          <input id="r-materia" type="text" value="Cálculo Diferencial de Varias Variables">
+        </label>
+        <label>Universidad
+          <input id="r-universidad" type="text" placeholder="USFX">
+        </label>
+      </div>
+      <button id="btn-registrar" class="btn-primario" type="button">Registrarme y entrar</button>
+      <p id="msg-registro" class="msg" role="status"></p>
+    </div>
+
+    <!-- Login -->
+    <div id="panel-login" class="ficha-panel hidden">
+      <p class="ficha-titulo">Acceso de estudiante registrado</p>
+      <label>Carnet universitario
+        <input id="l-carnet" type="text" placeholder="2024-12345">
+      </label>
+      <label>Correo electrónico
+        <input id="l-correo" type="email" autocomplete="email" placeholder="nombre@correo.com">
+      </label>
+      <button id="btn-login" class="btn-primario" type="button">Ingresar</button>
+      <p id="msg-login" class="msg" role="status"></p>
+    </div>
+  </section>
+</main>
+
+<!-- ════════════════════ VISTA: APLICACIÓN ════════════════════ -->
+<main id="vista-app" class="app hidden">
+
+  <section class="panel-control">
+    <div class="modo-tabs" role="tablist">
+      <button class="modo-tab activa" data-modo="gradiente" type="button">
+        <span class="modo-simbolo">∇f</span> Campo gradiente
+      </button>
+      <button class="modo-tab" data-modo="hamiltoniano" type="button">
+        <span class="modo-simbolo">X<sub>H</sub></span> Hamiltoniano
+      </button>
+      <button class="modo-tab" data-modo="vectorial3d" type="button">
+        <span class="modo-simbolo">F⃗</span> Campo 3D
+      </button>
+    </div>
+
+    <p id="modo-descripcion" class="modo-desc"></p>
+
+    <!-- Entradas escalar (gradiente / hamiltoniano) -->
+    <div id="entrada-escalar">
+      <label class="lbl-funcion"><span id="lbl-f">f(x, y) =</span>
+        <input id="in-f" class="in-func" type="text" spellcheck="false"
+               placeholder="x^2 - y^2" value="x^2 - y^2">
+      </label>
+    </div>
+
+    <!-- Entradas vectoriales (campo 3D) -->
+    <div id="entrada-vectorial" class="hidden">
+      <label class="lbl-funcion">P(x,y,z) =
+        <input id="in-P" class="in-func" type="text" spellcheck="false" value="-y">
+      </label>
+      <label class="lbl-funcion">Q(x,y,z) =
+        <input id="in-Q" class="in-func" type="text" spellcheck="false" value="x">
+      </label>
+      <label class="lbl-funcion">R(x,y,z) =
+        <input id="in-R" class="in-func" type="text" spellcheck="false" value="z/2">
+      </label>
+    </div>
+
+    <div class="controles-num">
+      <label>Rango del dominio ±
+        <input id="in-rango" type="number" min="0.5" max="20" step="0.5" value="3">
+      </label>
+      <label>Densidad de vectores
+        <input id="in-densidad" type="number" min="5" max="25" step="1" value="12">
+      </label>
+      <button id="btn-graficar" class="btn-primario" type="button">Graficar</button>
+    </div>
+    <p id="msg-campo" class="msg" role="status"></p>
+
+    <!-- Guía -->
+    <details class="guia" open>
+      <summary>📐 Guía: cómo escribir tu función correctamente</summary>
+      <div class="guia-cuerpo">
+        <table>
+          <thead><tr><th>Quieres escribir</th><th>Escribe</th><th>Nota</th></tr></thead>
+          <tbody>
+            <tr><td>x², y³</td><td><code>x^2</code> o <code>x**2</code></td><td>potencias con <code>^</code> o <code>**</code></td></tr>
+            <tr><td>3x·y</td><td><code>3*x*y</code> o <code>3x y</code></td><td>multiplicación implícita admitida</td></tr>
+            <tr><td>sen, cos, tan</td><td><code>sin(x)</code>, <code>cos(y)</code>, <code>tan(x)</code></td><td>argumento entre paréntesis</td></tr>
+            <tr><td>e<sup>x</sup>, ln</td><td><code>exp(x)</code>, <code>log(x)</code></td><td><code>log</code> es logaritmo natural</td></tr>
+            <tr><td>√x, |x|</td><td><code>sqrt(x)</code>, <code>abs(x)</code></td><td></td></tr>
+            <tr><td>π, e</td><td><code>pi</code>, <code>e</code></td><td>constantes</td></tr>
+            <tr><td>división</td><td><code>(x+y)/2</code></td><td>usa paréntesis para agrupar</td></tr>
+          </tbody>
+        </table>
+        <p class="guia-vars">Variables permitidas: <code>x, y</code> (escalar) · <code>x, y, z</code> (campo 3D).
+        Decimales con punto: <code>0.5</code>, no <code>0,5</code>.</p>
+        <p class="guia-ej-titulo">Ejemplos de un clic:</p>
+        <div id="ejemplos" class="ejemplos"></div>
+      </div>
+    </details>
+  </section>
+
+  <section class="panel-grafica">
+    <div id="resumen-latex" class="resumen-latex"></div>
+    <div id="grafica" class="grafica">
+      <div class="grafica-vacia">
+        <span>∮</span>
+        <p>Escribe una función y pulsa <strong>Graficar</strong>.<br>
+        Arrastra para rotar · rueda para zoom · doble clic para reiniciar la vista.</p>
+      </div>
+    </div>
+  </section>
+</main>
+
+<footer class="pie">
+  <p>VectorLab · Herramienta educativa de Cálculo Diferencial de Varias Variables ·
+  Motor simbólico: SymPy (Python) · Gráficos: Plotly.js</p>
+</footer>
+
+<script src="/static/app.js"></script>
+</body>
+</html>

@@ -1,0 +1,21 @@
+# 1. Crear el .gitignore (si aún no lo hiciste)
+echo __pycache__/ > .gitignore
+echo *.pyc >> .gitignore
+echo .venv/ >> .gitignore
+echo vectorlab.db >> .gitignore
+
+# 2. Inicializar el repositorio local
+git init
+
+# 3. Configurar tu identidad (solo la primera vez en esta máquina)
+git config --global user.name "Roger Jimenez Salinas"
+git config --global user.email "tu_correo_de_github@..."
+
+# 4. Preparar y confirmar los archivos
+git add .
+git commit -m "VectorLab: visualizador de campos vectoriales y hamiltonianos"
+
+# 5. Conectar con GitHub y subir
+git remote add origin https://github.com/rogerjimenezsalinas/VectorLab.git
+git branch -M main
+git push -u origin main
